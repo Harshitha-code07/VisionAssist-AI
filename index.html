@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionAssist AI - Accessibility Scene Assistant</title>
+  <meta name="description"
+    content="An accessibility assistant designed to help visually impaired users understand their environment, identify hazards, navigate obstacles, and read visible text. Ready for Gemini Vision.">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Skip Link for Screen Readers and Keyboard Users -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Main Header with Accessibility Controls -->
+  <header role="banner">
+    <div class="logo-container">
+      <div class="logo-icon" aria-hidden="true">
+        <!-- SVG Eye Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </div>
+      <div class="logo-text">
+        <h1 style="font-size: 1.35rem; margin: 0;">VisionAssist AI</h1>
+        <span class="text-xs" style="color: var(--text-muted); display: block;">Accessibility Assistant</span>
+      </div>
+    </div>
+
+    <!-- Accessibility Bar -->
+    <div class="a11y-controls" role="toolbar" aria-label="Accessibility options">
+      <!-- High Contrast Toggle -->
+      <button id="toggle-contrast" class="control-btn" aria-pressed="false" title="Toggle high contrast theme">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a9 9 0 1 0 9 9h-9Z" />
+          <path d="M12 3v9h9a9 9 0 0 0-9-9Z" />
+        </svg>
+        <span>High Contrast</span>
+      </button>
+
+      <!-- Font Size Controls -->
+      <button id="decrease-font" class="control-btn" title="Decrease text size"
+        aria-label="Decrease text size">A-</button>
+      <button id="increase-font" class="control-btn" title="Increase text size"
+        aria-label="Increase text size">A+</button>
+      <button id="reset-font" class="control-btn" title="Reset text size" aria-label="Reset text size to default">Reset
+        Size</button>
+
+      <!-- Settings Dropdown Toggle -->
+      <button id="toggle-settings" class="control-btn" aria-expanded="false" aria-controls="settings-drawer"
+        title="Toggle Gemini API settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Collapsible Gemini Settings Drawer -->
+  <section id="settings-drawer" class="settings-drawer" aria-label="Gemini API settings panel">
+    <div class="settings-content">
+      <div class="form-group">
+        <label for="api-key">Gemini API Key</label>
+        <input type="password" id="api-key" class="form-input"
+          placeholder="Enter your Gemini API key (runs in Demo Mode if empty)">
+      </div>
+      <div class="form-group">
+        <label for="model-select">Vision Model</label>
+        <select id="model-select" class="form-input" style="appearance: auto;">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended - Fast & Accurate)</option>
+          <option value="gemini-2.5-pro">Gemini 2.5 Pro (Thorough Analysis)</option>
+        </select>
+      </div>
+      <button id="save-settings" class="btn btn-primary" style="flex: 0 0 auto; height: 46px;">Save Settings</button>
+    </div>
+  </section>
+
+  <!-- Main Grid Workspace -->
+  <main id="main-content" role="main">
+
+    <!-- Left Interaction Panel: Inputs -->
+    <section class="panel" aria-labelledby="input-panel-title">
+      <div class="panel-header">
+        <h2 id="input-panel-title" class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          Input Section
+        </h2>
+        <span class="text-xs" style="color: var(--text-muted); font-weight: 500;">Step 1: Upload & Ask</span>
+      </div>
+
+      <!-- Drag & Drop Container -->
+      <div id="drop-zone" class="upload-container" role="button" tabindex="0"
+        aria-label="Upload image, drag and drop or click to select">
+        <input type="file" id="file-input" class="file-input" accept="image/*" tabIndex="-1">
+        <div id="upload-prompt" class="upload-icon-wrapper"
+          style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+          <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <div>
+            <p style="font-weight: 600; margin-bottom: 0.25rem;">Select image or drag & drop here</p>
+            <p class="text-xs" style="color: var(--text-muted);">Supports PNG, JPG, JPEG, WEBP</p>
+          </div>
+        </div>
+
+        <!-- Image Preview -->
+        <div id="preview-wrapper" class="preview-container">
+          <img id="image-preview" class="image-preview" src="#" alt="Uploaded image preview">
+          <button id="remove-image" class="remove-btn" title="Remove image" aria-label="Remove image">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Optional User Question -->
+      <div class="question-group">
+        <label for="question-input"
+          style="font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+          <span>Ask VisionAssist AI (Optional)</span>
+          <span class="text-xs" style="color: var(--text-muted); font-weight: normal;">Type or use microphone</span>
+        </label>
+        <div class="input-wrapper">
+          <textarea id="question-input" class="input-textarea"
+            placeholder="e.g. 'Are there any tripping hazards?' or 'Read the clock on the wall'"></textarea>
+          <!-- Mic button for dictation -->
+          <button id="mic-btn" class="mic-btn" title="Dictate question" aria-label="Speak your question">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="22" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button id="reset-btn" class="btn btn-secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <polyline points="3 3 3 8 8 8" />
+          </svg>
+          Reset
+        </button>
+        <button id="analyze-btn" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <line x1="11" y1="8" x2="11" y2="14" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+          Analyze Scene
+        </button>
+      </div>
+    </section>
+
+    <!-- Right Results Panel: Output -->
+    <section class="panel" aria-labelledby="output-panel-title" aria-live="polite">
+      <div class="panel-header">
+        <h2 id="output-panel-title" class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          Analysis Output
+        </h2>
+        <span id="demo-indicator" class="text-xs"
+          style="background-color: var(--primary-glow); border: 1px solid var(--primary); padding: 0.15rem 0.5rem; border-radius: 12px; font-weight: 600; display: inline-block;">Demo
+          Mode</span>
+      </div>
+
+      <!-- Empty State -->
+      <div id="results-empty" class="results-empty">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+          style="color: var(--text-muted);">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+        <div>
+          <p style="font-weight: 600; margin-bottom: 0.25rem;">No Image Loaded</p>
+          <p class="text-xs" style="color: var(--text-muted); max-width: 280px; margin: 0 auto;">Upload an image on the
+            left and click 'Analyze Scene' to receive accessibility-optimized details.</p>
+        </div>
+        <button id="load-sample-btn" class="btn btn-secondary" style="margin-top: 1rem; width: auto;">
+          Load Sample Image (images.jpg)
+        </button>
+      </div>
+
+      <!-- Loading State Overlay -->
+      <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="shimmer-text">Analyzing image & formulating guidance...</p>
+      </div>
+
+      <!-- Results Display Panel -->
+      <div id="results-content" class="results-content">
+
+        <!-- Risk Level Header -->
+        <div id="risk-card" class="risk-card risk-low" aria-live="assertive">
+          <div class="risk-info">
+            <span class="text-xs" style="font-weight: 600; color: var(--text-muted); opacity: 0.85;">SAFETY RISK
+              LEVEL</span>
+            <div class="risk-title" id="risk-level-badge">LOW RISK</div>
+            <div class="risk-reason" id="risk-level-reason">The environment appears clear of immediate danger. Standard
+              caution advised.</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Panel -->
+        <div class="quick-actions-section" role="region" aria-label="Quick Actions">
+          <span class="quick-actions-title">Quick Actions</span>
+          <div class="quick-actions-grid">
+            <button class="action-chip" id="action-read-aloud">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+              Read Aloud
+            </button>
+            <button class="action-chip" id="action-summarize">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="21" y1="6" x2="3" y2="6" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+                <line x1="17" y1="18" x2="3" y2="18" />
+              </svg>
+              Summarize Briefly
+            </button>
+            <button class="action-chip" id="action-front">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m18 15-6-6-6 6" />
+              </svg>
+              What is in front of me?
+            </button>
+            <button class="action-chip" id="action-hazards">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              Are there hazards?
+            </button>
+            <button class="action-chip" id="action-read-text">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 7 4 4 20 4 20 7" />
+                <line x1="9" y1="20" x2="15" y2="20" />
+                <line x1="12" y1="4" x2="12" y2="20" />
+              </svg>
+              Read visible text
+            </button>
+          </div>
+        </div>
+
+        <!-- Structured Results Output -->
+        <div class="result-cards-list" role="feed" aria-busy="false" aria-label="Analysis report items">
+
+          <!-- 1. Safety Alert Card -->
+          <article class="result-card card-safety" id="card-safety" tabindex="0">
+            <div class="result-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="color: var(--color-high);">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <h3>1. Safety Alert</h3>
+            </div>
+            <div class="result-card-body" id="val-safety">No safety alerts detected.</div>
+          </article>
+
+          <!-- 2. Navigation Guidance Card -->
+          <article class="result-card card-navigation" id="card-navigation" tabindex="0">
+            <div class="result-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="color: var(--color-medium);">
+                <polygon points="3 11 22 2 13 21 11 13 3 11" />
+              </svg>
+              <h3>2. Navigation Guidance</h3>
+            </div>
+            <div class="result-card-body" id="val-navigation">Proceed with standard awareness. Path is clear.</div>
+          </article>
+
+          <!-- 3. Important Objects Card -->
+          <article class="result-card card-objects" id="card-objects" tabindex="0">
+            <div class="result-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="color: #3b82f6;">
+                <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+              <h3>3. Important Objects</h3>
+            </div>
+            <div class="result-card-body" id="val-objects">No key obstacles identified.</div>
+          </article>
+
+          <!-- 4. Detected Text Card -->
+          <article class="result-card card-text" id="card-text" tabindex="0">
+            <div class="result-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="color: #a855f7;">
+                <polyline points="4 7 4 4 20 4 20 7" />
+                <line x1="9" y1="20" x2="15" y2="20" />
+                <line x1="12" y1="4" x2="12" y2="20" />
+              </svg>
+              <h3>4. Detected Text</h3>
+            </div>
+            <div class="result-card-body" id="val-text">No readable text found.</div>
+          </article>
+
+          <!-- 5. Environment Description Card -->
+          <article class="result-card card-environment" id="card-environment" tabindex="0">
+            <div class="result-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="color: var(--text-muted);">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <h3>5. Environment Description</h3>
+            </div>
+            <div class="result-card-body" id="val-environment">Undetermined location. Please upload a clear photo.</div>
+          </article>
+
+          <!-- 6. Confidence Card -->
+          <article class="result-card card-confidence" id="card-confidence" tabindex="0">
+            <div class="result-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="color: var(--color-low);">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              <h3>6. Confidence</h3>
+            </div>
+            <div class="result-card-body" id="val-confidence">Not assessed.</div>
+          </article>
+
+        </div>
+
+        <!-- Sticky Speech Toolbar at the Bottom of Results -->
+        <div class="tts-controls" role="region" aria-label="Speech Reader Controls">
+          <span class="text-xs" style="font-weight: 600; color: var(--text-muted);">SPEECH CONTROLLER</span>
+          <div class="tts-buttons">
+            <button id="tts-play" class="tts-btn" title="Play speech read aloud" aria-label="Play voice readout">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            </button>
+            <button id="tts-pause" class="tts-btn" title="Pause speech readout" aria-label="Pause voice readout">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+            </button>
+            <button id="tts-stop" class="tts-btn" title="Stop speech readout" aria-label="Stop voice readout">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="16" height="16" />
+              </svg>
+            </button>
+          </div>
+          <select id="tts-speed" class="tts-speed-selector" title="Select speaking speed"
+            aria-label="Speech speed rate">
+            <option value="0.8">0.8x Speed</option>
+            <option value="1.0" selected>1.0x Speed</option>
+            <option value="1.2">1.2x Speed</option>
+            <option value="1.5">1.5x Speed</option>
+          </select>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer role="contentinfo">
+    <p>VisionAssist AI Accessibility Platform. Double-tap elements or press Tab to navigate. Ready for <a
+        href="https://deepmind.google/technologies/gemini/" target="_blank" rel="noopener noreferrer">Gemini Vision</a>
+      API integration.</p>
+  </footer>
+
+  <!-- Include App Code scripts -->
+  <script src="gemini.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
